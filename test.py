@@ -1,19 +1,17 @@
-from spider_monkey import SMA
+from spider_monkey import SMA, chunk
+import math
 
 
 def fitness_calc(value):
-    print("Calculando fitness...",value)
-    return value[0]+value[1]
+    x1,x2 = value
 
-sma = SMA(pop_size=10, local_leader_limit=5, global_leader_limit=5,pr=0.2,
-          fitness_func=fitness_calc,dir_min_max=[(0,50),(0,50)])
+    return  math.sin(x1 + x2) + (x1 - x2)**2 - (3/2)*x1 + (5/2)*x2 +1
 
-sma.init_pop()
-sma.global_learning()
-sma.local_learning()
+sma = SMA(pop_size=100, max_group_size=10,local_leader_limit=5, global_leader_limit=5,pr=0.8,
+          fitness_func=fitness_calc,dir_min_max=[(-1.5,4),(-3,3)], max_iterations=10, minimize=True)
 
-sma.groups[0].members_pos_update()
-sma.local_leader_phase()
-sma.global_leader_phase()
-print("Global Leader",sma.global_leader)
-print("Local leader g0", sma.groups[0].local_leader)
+sma.run()
+
+best = min(sma.population, key=lambda sm: sm.fitness)
+x1,x2 = best.pos
+print("x1 = {}\nx2 = {}\nf(X*) = {}".format(x1,x2,best.fitness),sma.global_leader.fitness)
