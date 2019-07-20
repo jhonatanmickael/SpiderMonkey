@@ -13,6 +13,7 @@ sma.global_learning()
 sma.local_learning()
 
 sma.groups[0].members_pos_update()
+sma.local_leader_phase()
 sma.global_leader_phase()
 print("Global Leader",sma.global_leader)
 print("Local leader g0", sma.groups[0].local_leader)

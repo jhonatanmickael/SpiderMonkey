@@ -15,6 +15,15 @@ class SMA:
         self.fitness_func = fitness_func
         self.dir_min_max = dir_min_max
 
+    @staticmethod
+    def clip(value,min_max):
+        if value < min_max[0]:
+            return min_max[0]
+
+        if value > min_max[1]:
+            return min_max[1]
+
+        return value
 
     def global_learning(self):
         best = max(self.population,key = lambda sm: sm.fitness)
@@ -43,6 +52,11 @@ class SMA:
         for gp in self.groups:
             gp.local_learning()
 
+
+    def local_leader_phase(self):
+        for gp in self.groups:
+            gp.members_pos_update()
+
     def global_leader_phase(self):
         for gp in self.groups:
             gp.calc_probs()
@@ -57,6 +71,8 @@ class SMA:
                 i = random.choice(range(len(self.dir_min_max)))
                 new_pos[i] = sm.pos[i] + random.uniform(0,1) * (self.global_leader.pos[i] - sm.pos[i]) \
                              + random.uniform(-1,1) * (other.pos[i] - sm.pos[i])
+
+                new_pos[i] = self.clip(new_pos[i],self.dir_min_max[i])
 
                 new_pos_fitness = self.fitness_func(new_pos)
                 if new_pos_fitness > sm.fitness:
@@ -93,10 +109,12 @@ class SMG:
                 if other != sm:
                     break
 
-            for i in range(len(self.sma.dir_min_max)):
+            for i,min_max in enumerate(self.sma.dir_min_max):
                 if random.uniform(0,1) >= self.sma.pr:
                     new_pos[i] = sm.pos[i] + random.uniform(0,1) * (self.local_leader.pos[i] - sm.pos[i]) \
-                             + random.uniform(-1,1)  * (other.pos[i] - sm.pos[i])
+                             + random.uniform(-1,1) * (other.pos[i] - sm.pos[i])
+                    new_pos[i] = self.sma.clip(new_pos[i],min_max)
+
                 else:
                     new_pos[i] = sm.pos[i]
 
@@ -120,9 +138,8 @@ class SM:
     def rand_pos(self):
         self.pos = []
         for min,max in self.group.sma.dir_min_max:
-            pos = min + random.uniform(0,1) * (max  - min)
+            pos = min + random.uniform(0,1) * (max - min)
             self.pos.append(pos)
-
 
     def calc_fitness(self):
         self.fitness = self.group.sma.fitness_func(self.pos)
