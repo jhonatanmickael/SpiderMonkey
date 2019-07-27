@@ -6,7 +6,7 @@ def chunk(l, n):
 class SMA:
 
     def __init__(self,pop_size, max_group_size,local_leader_limit, global_leader_limit,
-                 pr, fitness_func, dir_min_max,max_iterations, minimize=False):
+                 pr, fitness_func, dir_min_max, conditional_func, minimize=False):
         self.groups = []
         self.global_leader_count = 0
         self.population = []
@@ -18,7 +18,7 @@ class SMA:
         self.fitness_func = fitness_func
         self.dir_min_max = dir_min_max
         self.max_group_size = max_group_size
-        self.max_iterations = max_iterations
+        self.conditional_func = conditional_func
         self.iter_count = 0
         self.minimize = minimize
         self.min_max_f = min if self.minimize else max
@@ -46,7 +46,7 @@ class SMA:
             self.global_leader = best
             return
 
-        if  self.fitness_cmp(best.fitness,self.global_leader.fitness):
+        if self.fitness_cmp(best.fitness,self.global_leader.fitness):
             self.global_leader.pos = best.pos[:]
             self.global_leader.fitness = best.fitness
         else:
@@ -101,6 +101,7 @@ class SMA:
             size = len(self.groups)
             self.groups = []
             if size < self.max_group_size:
+
                 qt = size + 1
                 for p in chunk(self.population,qt):
                     gp = SMG(self)
@@ -126,18 +127,18 @@ class SMA:
         self.local_learning()
         self.global_learning()
 
-        while self.iter_count < self.max_iterations:
+        while True:
 
             self.local_leader_phase()
             self.global_leader_phase()
-
             self.local_learning()
             self.global_learning()
-
             self.local_leader_decision()
             self.global_leader_decision()
 
             self.iter_count += 1
+            if not self.conditional_func(self.iter_count,self.global_leader.pos,self.global_leader.fitness,self):
+                return
 
 
 
@@ -168,6 +169,8 @@ class SMG:
             self.local_leader_count += 1
 
     def members_pos_update(self):
+        if len(self.members) == 1:
+            return
         for sm in self.members:
             new_pos = [0] * len(self.sma.dir_min_max)
             while True:
